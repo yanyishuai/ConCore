@@ -29,6 +29,13 @@
 - Supports file parsing: CSV, Excel, SQLite, JSON
 - Executes Python scripts in a sandboxed environment
 - Uses session-based storage for state management
+- **Data science stack** (pinned in `requirements.txt`): matplotlib, seaborn, scipy, scikit-learn, statsmodels, plotly (plus numpy/pandas)
+
+Run import tests after installing dependencies:
+
+```bash
+python -m unittest discover -s tests -v
+```
 
 ### Installation Steps 1. **Clone the repository**
 bash

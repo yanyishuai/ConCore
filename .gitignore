@@ -1,3 +1,6 @@
 CCenv/
 .env
 storage/
+__pycache__/
+*.pyc
+plot.png
