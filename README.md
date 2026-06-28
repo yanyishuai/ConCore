@@ -16,7 +16,8 @@
 ### Backend
 - **Flask** – API framework
 - **Python 3.8+** – Core programming language
-- **Google Gemini API (gemini-2.5-flash)** – LLM for orchestration
+- **Gemma 3 (4B) via Ollama** – default local LLM backend (privacy-first, offline)
+- **Google Gemini API** – optional cloud backend (`LLM_BACKEND=gemini`)
 - **Pandas** – Data processing
 - **SQLite3** – Handles database files
 
@@ -43,7 +44,16 @@ bash
     pip install -r requirements.txt
 4. **Configure environment variables** Create a .env file in the root directory:
 env
-   GOOGLE_API_KEY=your_gemini_api_key_here
+   # Local Gemma 3 (default)
+   LLM_BACKEND=ollama
+   OLLAMA_URL=http://localhost:11434
+   OLLAMA_MODEL=gemma3:4b
+
+   # Optional: cloud Gemini fallback
+   # LLM_BACKEND=gemini
+   # GOOGLE_API_KEY=your_gemini_api_key_here
+
+   Pull the model once: `ollama pull gemma3:4b`
 5. **Run the application**
 bash
    python app.py

@@ -1,24 +1,18 @@
-# ...existing code...
 from flask import Flask, render_template, request, jsonify, Response
 import os
 import uuid
+
 from tools.llm.llm_client import get_llm_client
 from tools.data_ingestion.parser import handle_file_upload
-from tools.context_management.context_handler import read_context, write_context, update_context_from_llm
+from tools.context_management.context_handler import read_context, write_context
 from tools.llm.orchestrator import process_user_message, cotas_generate_insights
 
-# instantiate central LLM client (configured via env: LLM_BACKEND, OLLAMA_URL, OLLAMA_MODEL)
 _llm_client = get_llm_client()
 
 app = Flask(__name__)
-app.config["MAX_CONTENT_LENGTH"] = 100 * 1024 * 1024  # 100MB max file size
+app.config["MAX_CONTENT_LENGTH"] = 100 * 1024 * 1024
 
 BASE_STORAGE = "storage"
-
-
-def _call_llm(prompt: str, max_tokens: int = 512, temperature: float = 0.0, stream: bool = False):
-
-    return _llm_client.generate(prompt=prompt, max_tokens=max_tokens, temperature=temperature, stream=stream)
 
 
 def get_session_path(session_id: str) -> dict:
@@ -123,7 +117,7 @@ def generate_insights():
             for update in cotas_generate_insights(paths, user_goal, max_loops):
                 yield f"data: {update}\n\n"
         except Exception as e:
-            yield f"data: {{\"error\": \"Analysis failed: {str(e)}\"}}\n\n"
+            yield f'data: {{"error": "Analysis failed: {str(e)}"}}\n\n'
 
     return Response(generate(), mimetype="text/event-stream")
 

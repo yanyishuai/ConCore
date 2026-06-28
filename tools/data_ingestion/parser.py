@@ -4,18 +4,12 @@ import json
 import time
 import sqlite3
 from typing import Dict, Any
-from dotenv import load_dotenv
-import google.generativeai as genai
 
 from tools.context_management.context_handler import append_dataset_metadata, update_context_from_llm
-
-load_dotenv()
-genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
+from tools.llm.llm_client import generate_text, strip_json_fences
 
 
 def extract_metadata_with_llm(filename: str, basic_metadata: Dict[str, Any]) -> Dict[str, Any]:
-    model = genai.GenerativeModel("gemini-1.5-flash")
-
     prompt = f"""Analyze this dataset metadata and provide rich context:
 
 FILENAME: {filename}
@@ -34,14 +28,7 @@ Respond with ONLY a JSON object containing:
 Only valid JSON, no additional text."""
 
     try:
-        response = model.generate_content(prompt)
-        response_text = getattr(response, "text", "{}").strip()
-
-        if "```json" in response_text:
-            response_text = response_text.split("```json")[1].split("```")[0].strip()
-        elif "```" in response_text:
-            response_text = response_text.split("```")[1].split("```")[0].strip()
-
+        response_text = strip_json_fences(generate_text(prompt, max_tokens=1024))
         return json.loads(response_text)
     except Exception as e:
         return {

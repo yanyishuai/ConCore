@@ -2,18 +2,13 @@ import json
 import os
 import time
 from typing import Dict, Any, Generator
-from dotenv import load_dotenv
-import google.generativeai as genai
 
 from tools.context_management.context_handler import (
     read_context, write_context, append_to_chat_history, 
     update_context_from_llm
 )
 from tools.script_executor.sandbox import run_script_safely
-
-load_dotenv()
-api_key = os.getenv("GOOGLE_API_KEY")
-genai.configure(api_key=api_key)
+from tools.llm.llm_client import generate_text, strip_json_fences
 
 def process_user_message(message: str, paths: dict) -> dict:
     context = read_context(paths["context"])
@@ -48,17 +43,8 @@ Example output:
 
 Respond with ONLY valid JSON, no additional text."""
 
-    model = genai.GenerativeModel("gemini-2.5-flash")
-    
     try:
-        response = model.generate_content(prompt)
-        response_text = getattr(response, "text", str(response)).strip()
-        
-        if "```json" in response_text:
-            response_text = response_text.split("```json")[1].split("```")[0].strip()
-        elif "```" in response_text:
-            response_text = response_text.split("```")[1].split("```")[0].strip()
-        
+        response_text = strip_json_fences(generate_text(prompt))
         result = json.loads(response_text)
         
         if result.get("context_update"):
@@ -104,7 +90,6 @@ Respond with ONLY valid JSON, no additional text."""
 def cotas_generate_insights(paths: dict, user_goal: str, max_loops: int = 15) -> Generator[str, None, None]:
     context = read_context(paths["context"])
     dataset_metadata = read_context(paths["dataset_metadata"])
-    model = genai.GenerativeModel("gemini-2.5-flash")
     
     cotas_log = {"goal": user_goal, "steps": [], "start_time": int(time.time())}
     
@@ -173,14 +158,7 @@ OR
 No additional text. Only valid JSON."""
 
         try:
-            response = model.generate_content(decision_prompt)
-            response_text = getattr(response, "text", str(response)).strip()
-            
-            if "```json" in response_text:
-                response_text = response_text.split("```json")[1].split("```")[0].strip()
-            elif "```" in response_text:
-                response_text = response_text.split("```")[1].split("```")[0].strip()
-            
+            response_text = strip_json_fences(generate_text(decision_prompt))
             decision = json.loads(response_text)
             
             if "action" not in decision or "content" not in decision:
@@ -304,9 +282,8 @@ Provide a brief insight about:
 Respond with only the insight text, no formatting."""
 
             try:
-                insight_resp = model.generate_content(insight_prompt)
-                insight = getattr(insight_resp, "text", stdout or stderr).strip()
-            except:
+                insight = generate_text(insight_prompt, max_tokens=512).strip()
+            except Exception:
                 insight = stdout or stderr or "Execution completed"
             
             last_output = insight
